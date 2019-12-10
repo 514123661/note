@@ -38,7 +38,7 @@ $\epsilon^R_{n(s,a)}:=\sqrt{\frac{ln(2/\delta_R)}{2n(s,a)}}$
 
 $CI(T):=\{{\tilde{T}(s,a)\in P_s|\lVert\tilde{T}(s,a)-\hat{T}(s,a)\rVert_1\leq}\epsilon^T_{n(s,a)}\}$
 
-$\epsilon^T_{n(s,a)}=\sqrt\frac{2[ln(2^{|S|}-2)-ln(\delta_T)]}{m}$
+$\epsilon^T_{n(s,a)}=\sqrt\frac{2[ln(2^{|S|}-2)-ln(\delta_T)]}{n(s,a)}$
 
 同样可以证明上述的估计是满足PAC的
 
@@ -96,11 +96,11 @@ $\lVert\tilde{T}(\cdot|s,a) - \hat{T}(\cdot|s,a)\rVert\leq \epsilon$
 
 6. while $\sum\limits_{s'}T(s'|s,a)>1$:
 
-   ​	6.1找到最小的非0$Q_{max}[t+1]$所对应的状态$s\_$	
+   ​	6.1找到最小的非0且$Q_{max}[t+1]$所对应的状态$s\_$	
 
    ​    6.2更新$T(s\_|s,a)\leftarrow max(0,T(s\_|s,a)+(1-\sum\limits_{s'}T(s'|s,a)))$
 
-7. 更新Q(s,a) by $Q(s,a)\leftarrow R(s,a)+\gamma\sum\limits_{s'}T(s'|s,a)Q_{max}[t+1](s')$
+7. 更新$Q(s,a)$ by $Q(s,a)\leftarrow R(s,a)+\gamma\sum\limits_{s'}T(s'|s,a)Q_{max}[t+1](s')$
 
 8. 修正整个Q表，以及当前阶段的$Q_{max}[t+1]$
 
@@ -195,7 +195,33 @@ $a_{t+1} = \arg \max _{a\in \mathbb{A}} \hat{Q}(s,a)$
 
 ### 采样复杂度以及完整性分析
 
-未完待续。。。。
+### 采样复杂度
+
+作者先给出了MBIE的采样复杂度结论：
+
+**Theorem 1.**假设$\epsilon,\delta\in(0,1)$，任意一个MDP($M = (S,A,T,R,\gamma)$)来说，存在输入$\delta_R=\delta_T=\frac{\delta}{2\left|S\right|\left|A\right|m}，\& \ m(\frac{1}{\epsilon},\frac{1}{\delta})=O(\frac{|S|}{\epsilon^2(1-\gamma)^4}+\frac{1}{\epsilon^2(1-\gamma)^4}\ln\frac{|S||A|}{\epsilon(1-\gamma)\delta})$，那么当agent采用MBIE去探索整个MDP的时候，当timestep $t = O(\frac{|S||A|}{\epsilon^3(1-\gamma)^6}(|S|+\ln\frac{|S||A|}{\epsilon(1-\gamma)\delta})\ln\frac{1}{\delta}\ln\frac{1}{\epsilon(1-\gamma)})$，那么我们就可以以至少概率$1-\delta$的认为，$V^{A_t}_M(s_t) \geq V^*_M(s_t)-\epsilon$。
+
+只要证明了上述理论是正确的，则根据PAC的定义，就表示MBIE算法是PAC-MDP的。
+
+总而言之，这个算法是个强学习性的。
+
+### 为证明该理论的所有lemme解析
+
+这个理论看起来很优美，但是证明起来确实复杂，作者为证明该理论提出了4个lemma，（文中给出了6个，其中2个是别的论文上的）。这些个引理还是值得一看，值得分析的，里面阐述了很多这个算法为什么可行的一些道理，以及其对未知环境的探索是如何做到的。
+
+##### lemma1.
+
+假设有两个相似的MDP：$M_1 = (S,A,T_1,R_1,\gamma),M_2=(S,A,T_2,R_2,\gamma)$。所谓的相似性为，两者有相同的状态和动作空间。并且$R_1,R_2\in(0,+\infin)$。如果两者的奖励函数，以及状态转移概率有如下关系：
+
+$$|R_1(s,a)-R_2(s,a)|\leq \alpha$$
+
+$\lVert T_1(s,a,\cdot)-T_2(s,a,\cdot)\rVert_1\leq\beta$
+
+那么对于一个确定的策略$\pi$，则有
+
+$|Q_1^\pi(s,a)-Q_2^\pi(s,a)|\leq\frac{\alpha+\gamma R_{max}\beta}{(1-\gamma)^2}$
+
+这个作者并没有给出证明。简要说明一下这个引理在后面证明中的价值：这个引理在后来的行文证明中，可以假设其中一个MDP是最优的MDP，或者说是算法想要无限逼近的最优值。那么我们需要做的事情是，把算法的策略上述最后的公式中，证明两个Q值的距离或者说差值，是在高概率情况下是比较小的。从而推到出算法的采样复杂度实在一个多项式范围内的。里面的变量是$\alpha,\beta$是可调的，我们接下来就能在这两个参数上做文章了。
 
 
 
