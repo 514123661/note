@@ -1,6 +1,6 @@
 # MBIE and MBIE-EB
 
-这篇论文的作者是littlman，做的一遍关于其在MDPs方面的exploration上的论文。
+这篇论文的作者是Littlman，做的一遍关于其在MDPs方面的exploration上的论文。
 
 首先明确一个观点，如果一个学习算法是满足PAC理论的，那么这个学习算法则可以在有限的样本中达到学习的目的，**强学习的(strong learnable)**。
 
@@ -38,7 +38,7 @@ $\epsilon^R_{n(s,a)}:=\sqrt{\frac{ln(2/\delta_R)}{2n(s,a)}}$
 
 $CI(T):=\{{\tilde{T}(s,a)\in P_s|\lVert\tilde{T}(s,a)-\hat{T}(s,a)\rVert_1\leq}\epsilon^T_{n(s,a)}\}$
 
-$\epsilon^T_{n(s,a)}=\sqrt\frac{2[ln(2^{|S|}-2)-ln(\delta_T)]}{n(s,a)}$
+$\epsilon^T_{n(s,a)}=\sqrt\frac{2[ln(2^{|S|}-2)-ln(\delta_T)]}{m}$
 
 同样可以证明上述的估计是满足PAC的
 
@@ -54,7 +54,7 @@ $Q'(s,a):=\max\limits_{\tilde{R}(s,a)\in CI(R)}\tilde{R}(s,a)+\max\limits_{\tild
 
 2.其中的m就表示这个常数时间。
 
-3.计算第二个式子需要一定的算法。littman给出了算法和证明，写到伪代码呢里。
+3.计算式子中的第二项需要一定的算法。littman给出了算法和证明，写到伪代码里。
 
 正文并没有给出算法的代码，让人觉得很费解，我会在稍后的内容中给出算法的伪代码。然后给Q出算法的时间复杂度分析
 
@@ -183,9 +183,9 @@ def compute_qVals_MBIEVI(self, R, P, R_confident, P_confident):
 
 该论文的作者在研究PAC-MDP[^1]中，则认为Q值可以做如下估计方式：
 
-$$\hat{Q}(s,a)  = \max_aR(s,a)+\gamma\sum_{s'}T(s'|s,a)max_aQ(s',a')+\frac{\beta}{\sqrt{n(s,a)}}$$
+$$\hat{Q}(s,a)  =R(s,a)+\gamma\sum_{s'}T(s'|s,a)max_{a'}Q(s',a')+\frac{\beta}{\sqrt{n(s,a)}}$$
 
-然后采取greedy策略来选取下一个动作，即：
+​	然后采取greedy策略来选取下一个动作，即：
 
 $a_{t+1} = \arg \max _{a\in \mathbb{A}} \hat{Q}(s,a)$
 
@@ -203,9 +203,9 @@ $a_{t+1} = \arg \max _{a\in \mathbb{A}} \hat{Q}(s,a)$
 
 只要证明了上述理论是正确的，则根据PAC的定义，就表示MBIE算法是PAC-MDP的。
 
-总而言之，这个算法是个强学习性的。
+总而言之，这个算法是个强学习性的。可见两者差的不多。
 
-### 为证明该理论的所有lemme解析
+### 为证明该理论的所有lemma解析
 
 这个理论看起来很优美，但是证明起来确实复杂，作者为证明该理论提出了4个lemma，（文中给出了6个，其中2个是别的论文上的）。这些个引理还是值得一看，值得分析的，里面阐述了很多这个算法为什么可行的一些道理，以及其对未知环境的探索是如何做到的。
 
@@ -223,7 +223,77 @@ $|Q_1^\pi(s,a)-Q_2^\pi(s,a)|\leq\frac{\alpha+\gamma R_{max}\beta}{(1-\gamma)^2}$
 
 这个作者并没有给出证明。简要说明一下这个引理在后面证明中的价值：这个引理在后来的行文证明中，可以假设其中一个MDP是最优的MDP，或者说是算法想要无限逼近的最优值。那么我们需要做的事情是，把算法的策略上述最后的公式中，证明两个Q值的距离或者说差值，是在高概率情况下是比较小的。从而推到出算法的采样复杂度实在一个多项式范围内的。里面的变量是$\alpha,\beta$是可调的，我们接下来就能在这两个参数上做文章了。
 
+##### lemma2.
 
+在lemma1的基础上，lemma2加了些限制：$R_{max}\geq 1$ 。假定lemma1的两个限制条件是成立的：$|R_1(s,a)-R_2(s,a)|\leq \alpha，\lVert T_1(s,a,\cdot)-T_2(s,a,\cdot)\rVert_1\leq\beta$，这样就能得出一个结论：存在一个常数$C$，使得对于任意的$\epsilon\in(0,\frac{R_{max}}{1-\gamma}]$，在采用一个固定策略$\pi$时，如果$\alpha=\beta=C(\frac{\epsilon(1-\gamma)^2}{R_{max}})$两个MDP的$Q$值存在以下关系
+
+$|Q_1^\pi(s,a)-Q^\pi_2(s,a)|\leq\epsilon$
+
+论文中有不太严谨的证明。
+
+我证明出来是：
+
+当$C=\frac{1}{1+\gamma}$ 上述式子都成立，有因为$\gamma\in(0,1]$的，所以$C\in[\frac{1}{2},1)$。所以Littlman在论文中选取$C=\frac{1}{2}$是合理的。
+
+所以证明两个MDP在某些情况下（上述的一些情况），两者的$Q$误差是在可控范围之内的。其实简单来说，最差的情况就是一个取到了最好的情况$V^\pi(s)=\frac{R_{max}}{1-\gamma}$,一个取到了最差的情况，就是0，所以两者最大的差距就很显而易见了。但是要求两个MDP模型啊，要足够的相似，否则两者的差距就会很大。
+
+##### lemma3
+
+这个lemma讲$(s,a)$分成了两个部分，一个部分是充分探索过的$K$，$A_M$是agent按照策略$\pi$ 去了之前没有探索过的$(s,a)$的事件，$\mathbf{Pr}$指的就是发生这件事情的概率，等算法运行了$H$步之后，真实的价值函数$V^\pi_M(s_1,H)\geq V^\pi_{M'}(s_1,H)-\frac{1}{1-\gamma}\mathbf{Pr}(A_M)$。其中$M'$是探索过得$(s,a)$所组成的MDP，$M$是整个的MDP。
+
+这个lemma仔细研读就会发现，$V^\pi_M(s_1,H)，V^\pi_{M'}(s_1,H)$两者error的上界是$\frac{1}{1-\gamma}\mathbf{Pr}(A_M)$，当未探索的事情发生的越多，那么这个概率值就会很大，我们可以不断的通过探索来减小这个上界。~~换句话说，算法是总想探索下新的$(s,a)$来使得自己的$V(s_1)$变大一些。~~这个式子应该这么看：
+
+$\frac{1}{1-\gamma} \mathbf{Pr}(A_M)\geq V^\pi_M(s_1,H)-V^\pi_{M'}(s_1,H)$
+
+意味着，只要两个value值差别太大，那么$A_M$事件，即，采样未知(*unknown*)的$(s,a)$发生的概率就会很大。
+
+之后在证明其算法探索能力的时候，这个lemma起到了很足的铺垫作用。
+
+##### lemma4
+
+没什么好说的，无非是当程序运行到一定程度了，两者的误差就会小一点了。
+
+如果$H\geq \frac{1}{1-\gamma}\ln\frac{1}{\epsilon(1-\gamma)}$，那么$|V^\pi(s,H)-V^\pi(s)|\leq\epsilon$
+
+之后的两个引理在
+
+##### lemma5,lemma6
+
+这两个lemma是导出算法的采样复杂度的关键引理。
+
+首先谈lemma5:
+
+这个引理提出，假设$\delta_R = \delta_T=\frac{\delta}{2|S||A|m}$，存在一个上界$m=O(\frac{|S|}{\tau^2}+\frac{1}{\tau^2}\ln\frac{|S||A|}{\tau\delta})$，只要所有的$(s,a)$被采样了至少m次以上的时候，那么就能保证MBIE算法评估的R和T与实际的差距是不大的。数学描述是：
+
+$$|\tilde{R}(s,a)-R(s,a)|\leq\tau$$
+
+$\lVert \tilde{T}(s,a,\cdot)-T(s,a,\cdot)\rVert_1\leq\tau$
+
+这个是显然的，将两个假设回带到和对R和T的评估公式中，可以推到出来
+
+阐述了一个什么问题呢，就是当采用MBIE算法的时候，只要采样数量足够，满足了那个上界之后，我们就能保证R 和 T 的评估是一定程度上是准确的。
+
+然后lemma6
+
+一旦满足了上述的bound之后 对于所有的Q值，在迭代过程中，都会满足
+
+$\tilde{Q}(s,a)\geq Q^*(s,a)$。
+
+
+
+关于采样复杂度的证明。
+
+暂时不想赘述这些
+
+首先证明确实有点意思，我在这里想要阐述的事实就是，作者用了一个思路去证明这个采样复杂度是比较小的。就是使用了仿真理论，简单来说就是，算法(即agent)，在一个MDP里面晃悠的时候，他自己根据自己的model(model base)，使用样本，来评估一个MDP，倘若其评估的MDP($\tilde{M}$) 与真实的MDP足够相似的话，由这个算法得出的决策结果，就有理由相信是足够接近最优值的。那么采样复杂度的影响因素就来自了两个，一个是对R的评估，一个是对T的评估，采样得到的样本量假设到达了一定程度之后，两个评估将会有一定概率是接近真实的，那么算法做出的觉得，也就一定的概率接近最优值了。所以，作者花了很多时间在lemma1-6上，而采样复杂度的证明就很少了。不过，里面有个耐人寻味的证明：
+
+针对与**lemma4**，以及后面的证明(隐式探索)：
+
+对于一个$Pr(A_M)\geq\epsilon_1(1-\gamma)$的时候，也就是说，agent会以至少$\epsilon_1(1-\gamma)$的概率进行探索，根据Hoeffding不等式，这个探索在执行了$O(\frac{m|S||A|}{\epsilon_1(1-\gamma)})$timestep之后，有$1-\frac{\delta}{2}$的概率相信所有$(s,a)$都会被知道。探索一段时间之后，$Pr(A_M)$会变小，接着转成利用阶段
+
+此时$Pr(A_M)<\epsilon_1(1-\gamma)$
+
+此时可以此时推导的出来的$V^{A_t}_M \geq V_M^{*}(s_t)-\epsilon$ 保证算法在至少为$1-\delta$的概率$A_t$的有$\epsilon-optimal$
 
 [^1]: PAC-MDP是这其算法的采样复杂度是关于$(|S|,|A|,\frac{1}{\epsilon},\frac{1}{\delta},\frac{1}{1-\gamma}) $的多项式小于某个数的该概率之多为$1-\delta$
 
