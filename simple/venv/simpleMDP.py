@@ -1,5 +1,7 @@
 import numpy as np
 
+from simpleMDP import *
+
 
 class simpleMDP(object):
     def __init__(self,nstate,naction,nep,noisy=1):
@@ -150,6 +152,7 @@ class HardExplorationMDP(simpleMDP):
             return p_reward
         else:
             return 0
+
     def compute_qVal(self):
         qVal = {}
         qMax = {}
@@ -165,15 +168,29 @@ class HardExplorationMDP(simpleMDP):
                     else:
                         qVal[s, j][a] = self.R[s, a] + self.gamma * np.dot(self.P[s, a], qMax[j + 1])
 
-                qMax[j][s] = np.max(qVal[s, j])
+                qMax[j][s] = np.round(np.max(qVal[s, j]),2)
 
         return qVal, qMax
 
+    def advance(self,action):
+        reward = self.R[self.state,action]
+        if (self.state,action)==(3,1):
+            reward = self.Terminal_Reward(param=self.r_param,p_reward=self.p_reward)
+        newstate = np.random.choice(self.nstate, p=self.P[self.state,action])
+        self.state = newstate
+        self.timestep += 1
+        if self.timestep == self.nep:
+            pContinue = 0
+            self.reset()
+        else:
+            pContinue = 1
+        return reward,newstate,pContinue
+
 if __name__ == '__main__':
     hardexploration = HardExplorationMDP(gamma=1)
-    qval,qmax = hardexploration.compute_qVal()
+    qval, qmax = hardexploration.compute_qVal()
 
-    for k,v in qmax.items():
+    for k, v in qmax.items():
         print("timestep: {}".format(k))
         print("qmax: {}".format(v))
         print()
